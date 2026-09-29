@@ -2,6 +2,8 @@ name: live files
 
 # Once a day: are the reports served on kvantix.tech byte for byte the ones in this repository?
 on:
+  push:
+    paths: [".github/workflows/live-site.yml", "reports/**", "SHA256SUMS"]
   schedule:
     - cron: "41 5 * * *"
   workflow_dispatch:
