@@ -1,0 +1,35 @@
+name: live files
+
+# Once a day: are the reports served on kvantix.tech byte for byte the ones in this repository?
+on:
+  schedule:
+    - cron: "41 5 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  BASE: https://kvantix.tech/wp-content/uploads
+
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Checksums of the committed files
+        run: sha256sum -c SHA256SUMS
+      - name: Compare with kvantix.tech
+        run: |
+          echo "| file | repository | kvantix.tech | |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|---|---|---|---|" >> "$GITHUB_STEP_SUMMARY"
+          fail=0
+          for f in kvantix-example-report-v1.pdf kvantix-example-report-v2.pdf; do
+            want=$(sha256sum "reports/$f" | cut -d' ' -f1)
+            curl -fsSL --retry 3 -A "kvantixtech/kvantix-reports live check (github actions)" "$BASE/$f" -o live.pdf
+            got=$(sha256sum live.pdf | cut -d' ' -f1)
+            ok=$([ "$got" = "$want" ] && echo "✓" || echo "✕")
+            [ "$got" = "$want" ] || fail=1
+            echo "| $f | \`${want:0:16}…\` | \`${got:0:16}…\` | $ok |" >> "$GITHUB_STEP_SUMMARY"
+          done
+          exit $fail
