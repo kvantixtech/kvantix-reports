@@ -10,6 +10,7 @@ on:
 
 permissions:
   contents: read
+  actions: write
 
 env:
   BASE: https://kvantix.tech/wp-content/uploads
@@ -35,3 +36,8 @@ jobs:
             echo "| $f | \`${want:0:16}…\` | \`${got:0:16}…\` | $ok |" >> "$GITHUB_STEP_SUMMARY"
           done
           exit $fail
+      - name: Keep the schedule alive
+        if: always() && github.event_name == 'schedule'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X PUT "repos/$GITHUB_REPOSITORY/actions/workflows/live-site.yml/enable" || true
